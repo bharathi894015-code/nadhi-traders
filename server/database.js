@@ -168,6 +168,12 @@ const DB = {
     if (order) order.products = JSON.parse(order.products);
     return order;
   },
+  async updateOrderStatus(id, status) {
+    if (isSupabase) {
+      return await db.from('orders').update({ status }).eq('id', id);
+    }
+    return db.prepare('UPDATE orders SET status = ? WHERE id = ?').run(status, id);
+  },
   async adminByEmail(email) {
     if (isSupabase) {
       const { data } = await db.from('admins').select('*').eq('email', email).single();
@@ -178,6 +184,35 @@ const DB = {
   async createAdmin(a) {
     if (isSupabase) return await db.from('admins').insert([a]);
     return db.prepare('INSERT INTO admins (email, password) VALUES (?, ?)').run(a.email, a.password);
+  },
+  async checkAdminEmailExists(email, currentId) {
+    if (isSupabase) {
+      // .neq is not equal
+      const { data } = await db.from('admins').select('id').eq('email', email).neq('id', currentId).maybeSingle();
+      return !!data;
+    }
+    return !!db.prepare('SELECT id FROM admins WHERE email = ? AND id != ?').get(email, currentId);
+  },
+  async updateAdmin(id, data) {
+    if (isSupabase) {
+      const { error } = await db.from('admins').update(data).eq('id', id);
+      if (error) throw error;
+      return;
+    }
+    const existing = db.prepare('SELECT * FROM admins WHERE id = ?').get(id);
+    db.prepare(`
+        UPDATE admins 
+        SET email=?, password=?, name=?, mobile=?, whatsapp=?, bio=? 
+        WHERE id=?
+    `).run(
+      data.email || existing.email,
+      data.password || existing.password,
+      data.name !== undefined ? data.name : existing.name,
+      data.mobile !== undefined ? data.mobile : existing.mobile,
+      data.whatsapp !== undefined ? data.whatsapp : existing.whatsapp,
+      data.bio !== undefined ? data.bio : existing.bio,
+      id
+    );
   }
 };
 

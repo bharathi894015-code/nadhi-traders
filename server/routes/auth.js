@@ -127,34 +127,29 @@ router.put('/me', authMiddleware, async (req, res) => {
     const adminId = req.admin.id;
 
     try {
+        const updateData = {};
+
         if (email) {
-            const existing = db.prepare('SELECT id FROM admins WHERE email = ? AND id != ?').get(email, adminId);
-            if (existing) {
+            const exists = await db.checkAdminEmailExists(email, adminId);
+            if (exists) {
                 return res.status(400).json({ success: false, message: 'Email already in use' });
             }
-            db.prepare('UPDATE admins SET email = ? WHERE id = ?').run(email, adminId);
+            updateData.email = email;
         }
 
         if (password) {
             if (password.length < 6) {
                 return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
             }
-            const hashedPassword = await bcrypt.hash(password, 10);
-            db.prepare('UPDATE admins SET password = ? WHERE id = ?').run(hashedPassword, adminId);
+            updateData.password = await bcrypt.hash(password, 10);
         }
 
-        // Update other fields
-        db.prepare(`
-            UPDATE admins 
-            SET name = ?, mobile = ?, whatsapp = ?, bio = ? 
-            WHERE id = ?
-        `).run(
-            name !== undefined ? name : req.admin.name,
-            mobile !== undefined ? mobile : req.admin.mobile,
-            whatsapp !== undefined ? whatsapp : req.admin.whatsapp,
-            bio !== undefined ? bio : req.admin.bio,
-            adminId
-        );
+        if (name !== undefined) updateData.name = name;
+        if (mobile !== undefined) updateData.mobile = mobile;
+        if (whatsapp !== undefined) updateData.whatsapp = whatsapp;
+        if (bio !== undefined) updateData.bio = bio;
+
+        await db.updateAdmin(adminId, updateData);
 
         res.json({ success: true, message: 'Profile updated successfully' });
     } catch (e) {
