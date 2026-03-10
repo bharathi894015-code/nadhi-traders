@@ -30,3 +30,4 @@ app.listen(PORT, HOST, () => {
     console.log(`   Internal IP access: http://0.0.0.0:${PORT}`);
     console.log(`   Admin panel: http://localhost:${PORT}/admin/login.html`);
 });
+module.exports = app;
