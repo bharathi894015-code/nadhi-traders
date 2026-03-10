@@ -11,8 +11,8 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Static files
-app.use(express.static(path.join(__dirname, '../public')));
+// Static files - Use process.cwd() for Vercel compatibility
+app.use(express.static(path.join(process.cwd(), 'public')));
 
 // API Routes
 app.use('/api/products', require('./routes/products'));
