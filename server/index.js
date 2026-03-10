@@ -25,9 +25,11 @@ app.get('/admin', (req, res) => {
     res.redirect('/admin/login.html');
 });
 
-app.listen(PORT, HOST, () => {
-    console.log(`🌿 NADHI TRADERS server running at http://localhost:${PORT}`);
-    console.log(`   Internal IP access: http://0.0.0.0:${PORT}`);
-    console.log(`   Admin panel: http://localhost:${PORT}/admin/login.html`);
-});
+if (!process.env.VERCEL) {
+    app.listen(PORT, HOST, () => {
+        console.log(`🌿 NADHI TRADERS server running at http://localhost:${PORT}`);
+        console.log(`   Internal IP access: http://0.0.0.0:${PORT}`);
+        console.log(`   Admin panel: http://localhost:${PORT}/admin/login.html`);
+    });
+}
 module.exports = app;

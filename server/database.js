@@ -1,7 +1,21 @@
+const fs = require('fs');
 const Database = require('better-sqlite3');
 const path = require('path');
 
-const db = new Database(path.join(__dirname, 'nadhi.db'));
+// Vercel uses a read-only filesystem except for /tmp
+const dbPath = process.env.VERCEL
+  ? path.join('/tmp', 'nadhi.db')
+  : path.join(__dirname, 'nadhi.db');
+
+// If on Vercel and db doesn't exist in /tmp, copy the initial one from the repo
+if (process.env.VERCEL && !fs.existsSync(dbPath)) {
+  const originalDbPath = path.join(__dirname, 'nadhi.db');
+  if (fs.existsSync(originalDbPath)) {
+    fs.copyFileSync(originalDbPath, dbPath);
+  }
+}
+
+const db = new Database(dbPath);
 
 // Create tables
 db.exec(`
