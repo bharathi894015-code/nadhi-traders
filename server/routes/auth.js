@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 const db = require('../database');
 
 // --- AUTH MIDDLEWARE ---
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({ success: false, message: 'No token provided' });
@@ -15,7 +15,7 @@ const authMiddleware = (req, res, next) => {
         const decoded = Buffer.from(token, 'base64').toString('utf8');
         const [email] = decoded.split(':');
         // Search in DB to ensure it's a real admin
-        const admin = db.prepare('SELECT * FROM admins WHERE email = ?').get(email);
+        const admin = await db.adminByEmail(email);
 
         if (!admin) throw new Error('Invalid user');
         req.admin = admin; // Full admin record
@@ -38,14 +38,13 @@ router.post('/signup', async (req, res) => {
 
     try {
         // Check if user already exists
-        const existing = db.prepare('SELECT id FROM admins WHERE email = ?').get(email);
+        const existing = await db.adminByEmail(email);
         if (existing) {
             return res.status(400).json({ success: false, message: 'Email already registered' });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-
-        db.prepare('INSERT INTO admins (email, password) VALUES (?, ?)').run(email, hashedPassword);
+        await db.createAdmin({ email, password: hashedPassword });
 
         res.json({ success: true, message: 'Admin account created successfully' });
     } catch (e) {
@@ -64,7 +63,7 @@ router.post('/login', async (req, res) => {
 
     try {
         // Find user by email
-        const admin = db.prepare('SELECT * FROM admins WHERE email = ?').get(email);
+        const admin = await db.adminByEmail(email);
 
         if (!admin) {
             return res.status(401).json({ success: false, message: 'Invalid credentials' });
@@ -87,7 +86,7 @@ router.post('/login', async (req, res) => {
 });
 
 // --- VERIFY TOKEN API ---
-router.post('/verify', (req, res) => {
+router.post('/verify', async (req, res) => {
     const { token } = req.body;
     if (!token) return res.status(401).json({ valid: false });
 
@@ -96,7 +95,7 @@ router.post('/verify', (req, res) => {
         const [email] = decoded.split(':');
 
         // Ensure email exists in DB
-        const admin = db.prepare('SELECT id FROM admins WHERE email = ?').get(email);
+        const admin = await db.adminByEmail(email);
 
         if (admin) {
             return res.json({ valid: true });
@@ -118,7 +117,7 @@ router.get('/me', authMiddleware, (req, res) => {
             mobile: req.admin.mobile || '',
             whatsapp: req.admin.whatsapp || '',
             bio: req.admin.bio || '',
-            createdAt: req.admin.createdAt
+            createdAt: req.admin.createdAt || req.admin.created_at
         }
     });
 });
