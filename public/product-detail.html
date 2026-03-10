@@ -1,0 +1,173 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Details – NADHI TRADERS</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">
+        <img src="/images/logo.png" alt="Nadhi Traders Logo" style="height:54px;width:auto;object-fit:contain;">
+        <div class="nav-logo-text">
+          <h2>NADHI TRADERS</h2>
+          <span>Premium Dry Fruits & Seeds</span>
+        </div>
+      </a>
+      <button class="nav-toggle" id="nav-toggle">☰</button>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="/">Home</a></li>
+        <li><a href="/products.html" class="active">Products</a></li>
+        <li><a href="/cart.html" class="cart-btn">🛒 Cart <span class="cart-count" id="cart-count"
+              style="display:none">0</span></a></li>        <li><a href="/admin/login.html" class="admin-nav-btn">🔐 Admin</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div id="detail-container" style="min-height:70vh;display:flex;align-items:center;justify-content:center">
+    <p style="color:var(--text-light)">Loading product…</p>
+  </div>
+
+  <section class="section" style="background:var(--cream-dark)">
+    <div class="container">
+      <h2 style="text-align:center;margin-bottom:32px;color:var(--brown-dark)">You Might Also <span
+          style="color:var(--green)">Like</span></h2>
+      <div class="products-grid" id="related-grid"></div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-bottom">© 2025 NADHI TRADERS — <a href="/">Home</a> · <a href="/products.html">Products</a> ·
+      <a href="/cart.html">Cart</a>
+    </div>
+  </footer>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/cart.js"></script>
+  <script>
+    const WEIGHTS = ['100g', '250g', '500g', '1kg'];
+    const MULT = { '100g': 0.1, '250g': 0.25, '500g': 0.5, '1kg': 1.0 };
+    let product = null;
+    let selectedWeight = '250g';
+
+    async function loadProduct() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id');
+      if (!id) { location.href = '/products.html'; return; }
+
+      try {
+        product = await API.get(`/api/products/${id}`);
+        document.title = `${product.name} – NADHI TRADERS`;
+        renderDetail();
+        loadRelated();
+      } catch (e) {
+        document.getElementById('detail-container').innerHTML = `<p style="color:red">Product not found. <a href="/products.html">Back to products</a></p>`;
+      }
+    }
+
+    function renderDetail() {
+      const badge = product.category === 'Dry Fruit' ? 'badge-dry-fruit' : 'badge-seed';
+      document.getElementById('detail-container').innerHTML = `
+    <div class="container" style="padding:60px 20px">
+      <a href="/products.html" style="color:var(--text-light);font-size:0.88rem">← Back to products</a>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-top:24px;align-items:start">
+        <div style="background:var(--white);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);text-align:center">
+          ${getProductImageTag(product.image, 'product-detail-img')}
+          <span class="product-card-badge ${badge}" style="margin:12px 0;display:inline-block">${product.category}</span>
+        </div>
+        <div>
+          <h1 style="font-size:2rem;margin-bottom:12px;color:var(--brown-dark)">${product.name}</h1>
+          <div id="price-display" style="font-size:1.8rem;font-weight:700;color:var(--green-dark);margin-bottom:20px">${formatPrice(product.price * 0.25)}</div>
+          <div style="background:var(--cream);border-radius:var(--radius-sm);padding:16px;margin-bottom:24px">
+            <p style="color:var(--text-mid);line-height:1.7">${product.description}</p>
+          </div>
+          <div style="margin-bottom:24px">
+            <div style="font-size:0.9rem;font-weight:600;color:var(--text-mid);margin-bottom:10px">Select Weight:</div>
+            <div class="weight-selector" id="weight-selector">
+              ${WEIGHTS.map(w => `<button class="weight-btn${w === '250g' ? ' active' : ''}" data-weight="${w}" onclick="selectWeight('${w}')">${w} – ${formatPrice(product.price * MULT[w])}</button>`).join('')}
+            </div>
+          </div>
+          <div style="margin-bottom:24px">
+            <div style="font-size:0.9rem;font-weight:600;color:var(--text-mid);margin-bottom:10px">Quantity:</div>
+            <div class="qty-control">
+              <button class="qty-btn" onclick="changeQty(-1)">−</button>
+              <span class="qty-num" id="qty-display">1</span>
+              <button class="qty-btn" onclick="changeQty(1)">+</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <button class="btn btn-primary" style="flex:1;min-width:150px" onclick="addToCartDetail()">🛒 Add to Cart</button>
+            <a href="/cart.html" class="btn btn-secondary" style="flex:1;min-width:150px">View Cart</a>
+          </div>
+          <div style="margin-top:16px">
+            <a href="https://wa.me/918838740081?text=Hi! I want to order ${encodeURIComponent(product.name)} from NADHI TRADERS" target="_blank" class="btn btn-whatsapp btn-full">💬 Order on WhatsApp</a>
+          </div>
+          <div style="margin-top:20px;padding:12px 16px;background:var(--green-pale);border-radius:var(--radius-sm);font-size:0.85rem;color:var(--green-dark)">
+            📦 Stock available: <strong>${product.stock} kg</strong> · Fast delivery
+          </div>
+        </div>
+      </div>
+    </div>`;
+    }
+
+    function selectWeight(w) {
+      selectedWeight = w;
+      document.querySelectorAll('.weight-btn').forEach(b => b.classList.toggle('active', b.dataset.weight === w));
+      const price = product.price * MULT[w] * currentQty();
+      document.getElementById('price-display').textContent = formatPrice(product.price * MULT[w]);
+    }
+
+    function currentQty() {
+      return parseInt(document.getElementById('qty-display').textContent);
+    }
+
+    function changeQty(delta) {
+      const el = document.getElementById('qty-display');
+      const newQty = Math.max(1, parseInt(el.textContent) + delta);
+      el.textContent = newQty;
+    }
+
+    function addToCartDetail() {
+      const qty = currentQty();
+      for (let i = 0; i < qty; i++) Cart.add(product, selectedWeight);
+    }
+
+    async function loadRelated() {
+      const grid = document.getElementById('related-grid');
+      try {
+        const all = await API.get('/api/products');
+        const related = all.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4);
+        if (!related.length) { grid.closest('section').style.display = 'none'; return; }
+        grid.innerHTML = related.map(p => `
+      <div class="product-card">
+        <a href="/product-detail.html?id=${p.id}">
+          ${getProductImageTag(p.image, 'product-card-img')}
+        </a>
+        <div class="product-card-body">
+          <a href="/product-detail.html?id=${p.id}"><div class="product-card-name">${p.name}</div></a>
+          <div class="product-card-price">${formatPrice(p.price)} <span>/ 1kg</span></div>
+          <a href="/product-detail.html?id=${p.id}" class="btn btn-secondary btn-sm btn-full">View Details</a>
+        </div>
+      </div>`).join('');
+      } catch (e) { }
+    }
+
+    initNavbar();
+    loadProduct();
+  </script>
+  <style>
+    @media(max-width:768px) {
+      #detail-container .container>div:nth-child(2) {
+        grid-template-columns: 1fr !important;
+        gap: 24px !important;
+      }
+    }
+  </style>
+</body>
+
+</html>

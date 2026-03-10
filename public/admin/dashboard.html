@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard – NADHI TRADERS</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <div class="admin-layout">
+
+        <!-- SIDEBAR -->
+        <aside class="admin-sidebar">
+            <div class="admin-sidebar-logo">
+                🌿 NADHI TRADERS<span>Admin Panel</span>
+            </div>
+            <nav class="admin-nav">
+                <a href="/admin/dashboard.html" class="active"><span class="icon">📊</span> Dashboard</a>
+                <a href="/admin/products.html"><span class="icon">📦</span> Products</a>
+                <a href="/admin/orders.html"><span class="icon">🧾</span> Orders</a>
+                <a href="/admin/details.html"><span class="icon">👤</span> Admin Details</a>
+                <a href="/" target="_blank"><span class="icon">🏪</span> View Store</a>
+                <a href="#" onclick="logout()"><span class="icon">🚪</span> Logout</a>
+            </nav>
+        </aside>
+
+        <!-- MAIN -->
+        <main class="admin-main">
+            <div class="admin-header">
+                <div>
+                    <h1>Dashboard</h1>
+                    <p style="color:var(--text-light);font-size:0.88rem">Welcome back, Admin</p>
+                </div>
+            </div>
+
+            <!-- STATS -->
+            <div class="stat-cards">
+                <div class="stat-card">
+                    <h3>Total Products</h3>
+                    <div class="num" id="stat-products">—</div>
+                </div>
+                <div class="stat-card brown-border">
+                    <h3>Total Orders</h3>
+                    <div class="num" id="stat-orders">—</div>
+                </div>
+                <div class="stat-card gold-border">
+                    <h3>Pending Orders</h3>
+                    <div class="num" id="stat-pending">—</div>
+                </div>
+                <div class="stat-card" style="border-left-color:var(--brown-light)">
+                    <h3>Total Revenue</h3>
+                    <div class="num" id="stat-revenue">—</div>
+                </div>
+            </div>
+
+            <!-- RECENT ORDERS -->
+            <div
+                style="background:var(--white);border-radius:var(--radius-md);padding:24px;box-shadow:var(--shadow-sm)">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+                    <h2 style="font-size:1.2rem;color:var(--brown-dark)">Recent Orders</h2>
+                    <a href="/admin/orders.html" class="btn btn-primary btn-sm">View All →</a>
+                </div>
+                <div class="admin-table-wrap">
+                    <table id="recent-orders-table">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Customer</th>
+                                <th>Phone</th>
+                                <th>Amount</th>
+                                <th>Payment</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-orders-body">
+                            <tr>
+                                <td colspan="7" style="text-align:center;color:var(--text-light)">Loading…</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        function requireAdmin() {
+            if (!localStorage.getItem('nadhi_admin_token')) location.href = '/admin/login.html';
+        }
+        function logout() {
+            localStorage.removeItem('nadhi_admin_token');
+            location.href = '/admin/login.html';
+        }
+        function padId(id) { return `#NT-${String(id).padStart(5, '0')}`; }
+        function formatPrice(p) { return '₹' + parseFloat(p).toFixed(2); }
+        function statusBadge(s) {
+            const cls = { Pending: 'status-pending', Packed: 'status-packed', Delivered: 'status-delivered' };
+            return `<span class="status-badge ${cls[s] || ''}">${s}</span>`;
+        }
+        function fmtDate(d) {
+            return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+
+        async function loadDashboard() {
+            requireAdmin();
+            try {
+                const [products, orders] = await Promise.all([
+                    API.get('/api/products'),
+                    API.get('/api/orders')
+                ]);
+                document.getElementById('stat-products').textContent = products.length;
+                document.getElementById('stat-orders').textContent = orders.length;
+                document.getElementById('stat-pending').textContent = orders.filter(o => o.status === 'Pending').length;
+                const revenue = orders.filter(o => o.status !== 'Pending').reduce((s, o) => s + o.totalAmount, 0);
+                document.getElementById('stat-revenue').textContent = '₹' + revenue.toFixed(0);
+
+                const tbody = document.getElementById('recent-orders-body');
+                const recent = orders.slice(0, 8);
+                if (!recent.length) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-light)">No orders yet</td></tr>`; return; }
+                tbody.innerHTML = recent.map(o => `
+      <tr>
+        <td>${padId(o.id)}</td>
+        <td>${o.customerName}</td>
+        <td>${o.phone}</td>
+        <td>${formatPrice(o.totalAmount)}</td>
+        <td>${o.paymentMethod}</td>
+        <td>${statusBadge(o.status)}</td>
+        <td>${fmtDate(o.createdAt)}</td>
+      </tr>`).join('');
+            } catch (e) {
+                document.getElementById('recent-orders-body').innerHTML = `<tr><td colspan="7" style="text-align:center;color:red">Failed to load data</td></tr>`;
+            }
+        }
+
+        loadDashboard();
+    </script>
+</body>
+
+</html>

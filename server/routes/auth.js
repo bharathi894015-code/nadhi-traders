@@ -1,0 +1,170 @@
+const express = require('express');
+const router = express.Router();
+const bcrypt = require('bcryptjs');
+const db = require('../database');
+
+// --- AUTH MIDDLEWARE ---
+const authMiddleware = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ success: false, message: 'No token provided' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    try {
+        const decoded = Buffer.from(token, 'base64').toString('utf8');
+        const [email] = decoded.split(':');
+        // Search in DB to ensure it's a real admin
+        const admin = db.prepare('SELECT * FROM admins WHERE email = ?').get(email);
+
+        if (!admin) throw new Error('Invalid user');
+        req.admin = admin; // Full admin record
+        next();
+    } catch (e) {
+        return res.status(401).json({ success: false, message: 'Invalid or expired token' });
+    }
+};
+
+// --- SIGN UP API ---
+router.post('/signup', async (req, res) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({ success: false, message: 'Email and password are required' });
+    }
+    if (password.length < 6) {
+        return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+    }
+
+    try {
+        // Check if user already exists
+        const existing = db.prepare('SELECT id FROM admins WHERE email = ?').get(email);
+        if (existing) {
+            return res.status(400).json({ success: false, message: 'Email already registered' });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        db.prepare('INSERT INTO admins (email, password) VALUES (?, ?)').run(email, hashedPassword);
+
+        res.json({ success: true, message: 'Admin account created successfully' });
+    } catch (e) {
+        console.error('Signup error:', e);
+        res.status(500).json({ success: false, message: 'Server error during signup' });
+    }
+});
+
+// --- LOGIN API ---
+router.post('/login', async (req, res) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({ success: false, message: 'Email and password are required' });
+    }
+
+    try {
+        // Find user by email
+        const admin = db.prepare('SELECT * FROM admins WHERE email = ?').get(email);
+
+        if (!admin) {
+            return res.status(401).json({ success: false, message: 'Invalid credentials' });
+        }
+
+        // Compare password
+        const isMatch = await bcrypt.compare(password, admin.password);
+        if (!isMatch) {
+            return res.status(401).json({ success: false, message: 'Invalid credentials' });
+        }
+
+        // Success - Generate a simple token (base64 of email+timestamp) – MVP level auth
+        const token = Buffer.from(`${email}:${Date.now()}`).toString('base64');
+        res.json({ success: true, token, message: 'Login successful' });
+
+    } catch (e) {
+        console.error('Login error:', e);
+        res.status(500).json({ success: false, message: 'Server error during login' });
+    }
+});
+
+// --- VERIFY TOKEN API ---
+router.post('/verify', (req, res) => {
+    const { token } = req.body;
+    if (!token) return res.status(401).json({ valid: false });
+
+    try {
+        const decoded = Buffer.from(token, 'base64').toString('utf8');
+        const [email] = decoded.split(':');
+
+        // Ensure email exists in DB
+        const admin = db.prepare('SELECT id FROM admins WHERE email = ?').get(email);
+
+        if (admin) {
+            return res.json({ valid: true });
+        }
+    } catch (e) { }
+
+    res.status(401).json({ valid: false });
+});
+
+// --- PROFILE API (PROTECTED) ---
+router.get('/me', authMiddleware, (req, res) => {
+    // req.admin is set by authMiddleware (full record)
+    res.json({
+        success: true,
+        admin: {
+            id: req.admin.id,
+            name: req.admin.name || '',
+            email: req.admin.email,
+            mobile: req.admin.mobile || '',
+            whatsapp: req.admin.whatsapp || '',
+            bio: req.admin.bio || '',
+            createdAt: req.admin.createdAt
+        }
+    });
+});
+
+router.put('/me', authMiddleware, async (req, res) => {
+    const { name, email, password, mobile, whatsapp, bio } = req.body;
+    const adminId = req.admin.id;
+
+    try {
+        if (email) {
+            const existing = db.prepare('SELECT id FROM admins WHERE email = ? AND id != ?').get(email, adminId);
+            if (existing) {
+                return res.status(400).json({ success: false, message: 'Email already in use' });
+            }
+            db.prepare('UPDATE admins SET email = ? WHERE id = ?').run(email, adminId);
+        }
+
+        if (password) {
+            if (password.length < 6) {
+                return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+            }
+            const hashedPassword = await bcrypt.hash(password, 10);
+            db.prepare('UPDATE admins SET password = ? WHERE id = ?').run(hashedPassword, adminId);
+        }
+
+        // Update other fields
+        db.prepare(`
+            UPDATE admins 
+            SET name = ?, mobile = ?, whatsapp = ?, bio = ? 
+            WHERE id = ?
+        `).run(
+            name !== undefined ? name : req.admin.name,
+            mobile !== undefined ? mobile : req.admin.mobile,
+            whatsapp !== undefined ? whatsapp : req.admin.whatsapp,
+            bio !== undefined ? bio : req.admin.bio,
+            adminId
+        );
+
+        res.json({ success: true, message: 'Profile updated successfully' });
+    } catch (e) {
+        console.error('Profile update error:', e);
+        res.status(500).json({ success: false, message: 'Server error during update' });
+    }
+});
+
+module.exports = {
+    router,
+    authMiddleware
+};

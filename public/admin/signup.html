@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Signup – NADHI TRADERS</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body style="background:var(--brown-dark);min-height:100vh;display:flex;align-items:center;justify-content:center">
+
+    <div style="width:100%;max-width:400px;padding:20px;">
+        <div style="text-align:center;margin-bottom:32px">
+            <div style="font-size:3rem;margin-bottom:12px">🌿</div>
+            <h1 style="color:var(--cream);font-size:1.6rem;margin-bottom:4px">NADHI TRADERS</h1>
+            <p style="color:var(--brown-light);font-size:0.88rem">Create Admin Account</p>
+        </div>
+
+        <div style="background:var(--white);border-radius:var(--radius-lg);padding:36px;box-shadow:var(--shadow-lg)">
+            <h2 style="color:var(--brown-dark);margin-bottom:24px;font-size:1.4rem;text-align:center">📝 Admin Signup
+            </h2>
+
+            <div id="signup-error" class="alert alert-error hidden"></div>
+            <div id="signup-success" class="alert alert-success hidden">Account created successfully! Redirecting...
+            </div>
+
+            <form id="signup-form">
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="email" placeholder="newadmin@nadhitraders.com" required
+                        autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="password" placeholder="At least 6 characters" required
+                        autocomplete="new-password">
+                </div>
+                <div class="form-group">
+                    <label>Confirm Password</label>
+                    <input type="password" id="confirm-password" placeholder="Confirm your password" required
+                        autocomplete="new-password">
+                </div>
+                <button type="submit" class="btn btn-primary btn-full" id="signup-btn">Create Account</button>
+            </form>
+
+            <p style="text-align:center;margin-top:20px;font-size:0.9rem">
+                Already have an account? <a href="/admin/login.html" style="color:var(--green);font-weight:600">Login
+                    here</a>
+            </p>
+        </div>
+
+        <p style="text-align:center;margin-top:20px;font-size:0.8rem">
+            <a href="/" style="color:var(--brown-light)">← Back to Store</a>
+        </p>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        // Redirect if already logged in
+        if (localStorage.getItem('nadhi_admin_token')) {
+            location.href = '/admin/dashboard.html';
+        }
+
+        document.getElementById('signup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('signup-btn');
+            const errEl = document.getElementById('signup-error');
+            const successEl = document.getElementById('signup-success');
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+
+            errEl.classList.add('hidden');
+            successEl.classList.add('hidden');
+
+            if (password !== confirmPassword) {
+                errEl.textContent = 'Passwords do not match.';
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            if (password.length < 6) {
+                errEl.textContent = 'Password must be at least 6 characters.';
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Creating account…';
+
+            try {
+                // We construct the request manually because API.post might throw without returning JSON
+                // if not handled perfectly, but we'll try API.post first.
+                const response = await fetch('/api/admin/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    successEl.classList.remove('hidden');
+                    // Automatically login by requesting token
+                    const loginRes = await fetch('/api/admin/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password })
+                    });
+                    const loginData = await loginRes.json();
+
+                    if (loginRes.ok && loginData.success) {
+                        localStorage.setItem('nadhi_admin_token', loginData.token);
+                        setTimeout(() => {
+                            location.href = '/admin/dashboard.html';
+                        }, 1500);
+                    } else {
+                        setTimeout(() => {
+                            location.href = '/admin/login.html';
+                        }, 1500);
+                    }
+                } else {
+                    throw new Error(data.message || 'Signup failed');
+                }
+            } catch (e) {
+                errEl.textContent = e.message || 'An error occurred during signup.';
+                errEl.classList.remove('hidden');
+                btn.disabled = false;
+                btn.textContent = 'Create Account';
+            }
+        });
+    </script>
+</body>
+
+</html>

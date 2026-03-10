@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products – Admin | NADHI TRADERS</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <div class="admin-layout">
+
+        <aside class="admin-sidebar">
+            <div class="admin-sidebar-logo">🌿 NADHI TRADERS<span>Admin Panel</span></div>
+            <nav class="admin-nav">
+                <a href="/admin/dashboard.html"><span class="icon">📊</span> Dashboard</a>
+                <a href="/admin/products.html" class="active"><span class="icon">📦</span> Products</a>
+                <a href="/admin/orders.html"><span class="icon">🧾</span> Orders</a>
+                <a href="/admin/details.html"><span class="icon">👤</span> Admin Details</a>
+                <a href="/" target="_blank"><span class="icon">🏪</span> View Store</a>
+                <a href="#" onclick="logout()"><span class="icon">🚪</span> Logout</a>
+            </nav>
+        </aside>
+
+        <main class="admin-main">
+            <div class="admin-header">
+                <div>
+                    <h1>Products</h1>
+                    <p style="color:var(--text-light);font-size:0.88rem">Manage your product catalogue</p>
+                </div>
+                <button class="btn btn-primary" onclick="openAddModal()">+ Add Product</button>
+            </div>
+
+            <div id="alert-box"></div>
+
+            <div
+                style="background:var(--white);border-radius:var(--radius-md);padding:24px;box-shadow:var(--shadow-sm)">
+                <div class="admin-table-wrap">
+                    <table id="products-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Image</th>
+                                <th>Name</th>
+                                <th>Category</th>
+                                <th>Price/kg</th>
+                                <th>Stock</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="products-body">
+                            <tr>
+                                <td colspan="7" style="text-align:center;color:var(--text-light)">Loading…</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ADD/EDIT MODAL -->
+    <div class="modal-overlay hidden" id="product-modal">
+        <div class="modal">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <h2 id="modal-title">Add Product</h2>
+            <form id="product-form">
+                <input type="hidden" id="product-id">
+                <div class="form-group">
+                    <label>Product Name *</label>
+                    <input type="text" id="p-name" required placeholder="e.g. Badham (Almonds)">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Category *</label>
+                        <select id="p-category" required>
+                            <option value="">Select…</option>
+                            <option value="Dry Fruit">Dry Fruit</option>
+                            <option value="Seed">Seed</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Price per 1kg (₹) *</label>
+                        <input type="number" id="p-price" required min="1" step="0.01" placeholder="320">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="p-description" rows="3" placeholder="Brief product description…"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Stock (kg)</label>
+                        <input type="number" id="p-stock" min="0" placeholder="100">
+                    </div>
+                    <div class="form-group">
+                        <label>Upload Image</label>
+                        <input type="file" id="p-image-file" accept="image/*">
+                    </div>
+                </div>
+                <div class="form-group" style="display:none">
+                    <label>Current Image Filename</label>
+                    <input type="text" id="p-image">
+                </div>
+                <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="save-btn">Save Product</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        function requireAdmin() { if (!localStorage.getItem('nadhi_admin_token')) location.href = '/admin/login.html'; }
+        function logout() { localStorage.removeItem('nadhi_admin_token'); location.href = '/admin/login.html'; }
+        function formatPrice(p) { return '₹' + parseFloat(p).toFixed(2); }
+
+        function showAlert(msg, type = 'success') {
+            const el = document.getElementById('alert-box');
+            el.innerHTML = `<div class="alert alert-${type}" style="margin-bottom:16px; box-shadow: var(--shadow-md); border-left: 5px solid ${type === 'success' ? 'var(--green)' : '#e53935'}">${type === 'success' ? '✅' : '❌'} ${msg}</div>`;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(() => el.innerHTML = '', 4000);
+        }
+
+        async function loadProducts() {
+            const tbody = document.getElementById('products-body');
+            try {
+                const products = await API.get('/api/products');
+                if (!products || !products.length) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center">No products yet. Add one!</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = '';
+                products.forEach(p => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>#${p.id}</td>
+                        <td><img src="/uploads/${p.image}" style="width:40px;height:40px;object-fit:cover;border-radius:4px" onerror="this.src='https://placehold.co/40?text=📦'"></td>
+                        <td><strong>${p.name}</strong></td>
+                        <td><span class="product-card-badge ${p.category === 'Dry Fruit' ? 'badge-dry-fruit' : 'badge-seed'}">${p.category}</span></td>
+                        <td>${formatPrice(p.price)}</td>
+                        <td>${p.stock} kg</td>
+                        <td>
+                            <div style="display:flex;gap:8px">
+                                <button class="btn btn-secondary btn-sm edit-btn">✏️ Edit</button>
+                                <button class="btn btn-danger btn-sm delete-btn">🗑️ Delete</button>
+                            </div>
+                        </td>
+                    `;
+                    tr.querySelector('.edit-btn').onclick = () => openEditModal(p.id);
+                    tr.querySelector('.delete-btn').onclick = () => deleteProduct(p.id, p.name);
+                    tbody.appendChild(tr);
+                });
+            } catch (e) {
+                console.error(e);
+                tbody.innerHTML = '<tr><td colspan="7" style="color:red;text-align:center">Failed to load products</td></tr>';
+            }
+        }
+
+        function openAddModal() {
+            document.getElementById('modal-title').textContent = 'Add New Product';
+            document.getElementById('product-id').value = '';
+            document.getElementById('product-form').reset();
+            document.getElementById('save-btn').textContent = 'Add Product';
+            document.getElementById('product-modal').classList.remove('hidden');
+        }
+
+        async function openEditModal(id) {
+            try {
+                const p = await API.get(`/api/products/${id}`);
+                document.getElementById('modal-title').textContent = 'Edit Product';
+                document.getElementById('product-id').value = p.id;
+                document.getElementById('p-name').value = p.name;
+                document.getElementById('p-category').value = p.category;
+                document.getElementById('p-price').value = p.price;
+                document.getElementById('p-description').value = p.description;
+                document.getElementById('p-stock').value = p.stock;
+                document.getElementById('p-image').value = p.image;
+                document.getElementById('save-btn').textContent = 'Save Changes';
+                document.getElementById('product-modal').classList.remove('hidden');
+            } catch (e) { showAlert('Failed to load product', 'error'); }
+        }
+
+        function closeModal() { document.getElementById('product-modal').classList.add('hidden'); }
+
+        document.getElementById('product-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('save-btn');
+            btn.disabled = true;
+            btn.textContent = 'Saving…';
+
+            try {
+                let imageFilename = document.getElementById('p-image').value || 'default.jpg';
+                const fileInput = document.getElementById('p-image-file');
+                if (fileInput.files[0]) {
+                    const formData = new FormData();
+                    formData.append('image', fileInput.files[0]);
+                    const uploaded = await API.upload(formData);
+                    imageFilename = uploaded.filename;
+                }
+
+                const data = {
+                    name: document.getElementById('p-name').value,
+                    category: document.getElementById('p-category').value,
+                    description: document.getElementById('p-description').value,
+                    price: parseFloat(document.getElementById('p-price').value),
+                    stock: parseInt(document.getElementById('p-stock').value) || 0,
+                    image: imageFilename
+                };
+
+                const id = document.getElementById('product-id').value;
+                if (id) {
+                    await API.put(`/api/products/${id}`, data);
+                    showAlert('Product updated successfully!');
+                } else {
+                    await API.post('/api/products', data);
+                    showAlert('Product added successfully!');
+                }
+                closeModal();
+                loadProducts();
+            } catch (err) {
+                showAlert('Failed to save product. ' + (err.message || ''), 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = document.getElementById('product-id').value ? 'Save Changes' : 'Add Product';
+            }
+        });
+
+        async function deleteProduct(id, name) {
+            if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+            try {
+                await API.delete(`/api/products/${id}`);
+                showAlert(`"${name}" deleted.`);
+                loadProducts();
+            } catch (e) {
+                console.error(e);
+                showAlert('Delete failed: ' + e.message, 'error');
+            }
+        }
+
+        requireAdmin();
+        loadProducts();
+    </script>
+</body>
+
+</html>

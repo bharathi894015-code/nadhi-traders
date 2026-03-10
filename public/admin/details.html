@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Details – Admin | NADHI TRADERS</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <div class="admin-layout">
+
+        <!-- SIDEBAR -->
+        <aside class="admin-sidebar">
+            <div class="admin-sidebar-logo">🌿 NADHI TRADERS<span>Admin Panel</span></div>
+            <nav class="admin-nav">
+                <a href="/admin/dashboard.html"><span class="icon">📊</span> Dashboard</a>
+                <a href="/admin/products.html"><span class="icon">📦</span> Products</a>
+                <a href="/admin/orders.html"><span class="icon">🧾</span> Orders</a>
+                <a href="/admin/details.html" class="active"><span class="icon">👤</span> Admin Details</a>
+                <a href="/" target="_blank"><span class="icon">🏪</span> View Store</a>
+                <a href="#" onclick="logout()"><span class="icon">🚪</span> Logout</a>
+            </nav>
+        </aside>
+
+        <!-- MAIN -->
+        <main class="admin-main"
+            style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 40px 20px;">
+            <div class="admin-header" style="width: 100%; max-width: 700px; text-align: center; margin-bottom: 32px;">
+                <div>
+                    <h1 style="font-family: 'Playfair Display', serif; color: var(--brown-dark); margin-bottom: 8px;">
+                        Admin Details</h1>
+                    <p style="color:var(--text-light);font-size:0.95rem">Manage your administrative account and profile
+                    </p>
+                </div>
+            </div>
+
+            <div id="alert-box" style="width: 100%; max-width: 700px;"></div>
+
+            <div
+                style="width: 100%; max-width: 700px; background:var(--white);border-radius:var(--radius-md);padding:40px;box-shadow:var(--shadow-md); margin-bottom: 40px;">
+                <h2
+                    style="font-size:1.4rem;color:var(--brown-dark);margin-bottom:32px;border-bottom:2px solid var(--cream-dark);padding-bottom:16px; display: flex; align-items: center; gap: 12px;">
+                    <span>👤</span> Profile Information
+                </h2>
+
+                <form id="profile-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" id="adm-name" placeholder="Real Name">
+                        </div>
+                        <div class="form-group">
+                            <label>Email Address *</label>
+                            <input type="email" id="adm-email" required placeholder="admin@nadhitraders.com">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Mobile Number</label>
+                            <input type="tel" id="adm-mobile" placeholder="+91 88387 40081">
+                        </div>
+                        <div class="form-group">
+                            <label>WhatsApp Number</label>
+                            <input type="tel" id="adm-whatsapp" placeholder="+91 88387 40081">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Additional Details (Bio)</label>
+                        <textarea id="adm-bio" rows="3" placeholder="Shop address, owner bio, etc."></textarea>
+                    </div>
+
+                    <div style="margin-top:40px">
+                        <h3
+                            style="font-size:1rem;color:var(--brown-dark);margin-bottom:16px;padding-top:20px;border-top:2px dashed var(--cream-dark)">
+                            🔐 Change Password</h3>
+                        <p style="font-size:0.82rem;color:var(--text-light);margin-bottom:16px">Leave blank if you don't
+                            want to change the password.</p>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>New Password</label>
+                                <input type="password" id="adm-password" placeholder="At least 6 characters"
+                                    minlength="6">
+                            </div>
+                            <div class="form-group">
+                                <label>Confirm New Password</label>
+                                <input type="password" id="adm-confirm-password"
+                                    placeholder="Confirm your new password">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        style="margin-top:32px;padding-top:20px;border-top:1px solid var(--cream-dark);display:flex;justify-content:space-between;align-items:center">
+                        <span id="created-at" style="font-size:0.8rem;color:var(--text-light)">Account created: —</span>
+                        <button type="submit" class="btn btn-primary" id="save-profile-btn">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        function requireAdmin() { if (!localStorage.getItem('nadhi_admin_token')) location.href = '/admin/login.html'; }
+        function logout() { localStorage.removeItem('nadhi_admin_token'); location.href = '/admin/login.html'; }
+
+        function showAlert(msg, type = 'success') {
+            const el = document.getElementById('alert-box');
+            el.innerHTML = `<div class="alert alert-${type}" style="margin-bottom:16px; box-shadow: var(--shadow-md); border-left: 5px solid ${type === 'success' ? 'var(--green)' : '#e53935'}">${type === 'success' ? '✅' : '❌'} ${msg}</div>`;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(() => el.innerHTML = '', 4000);
+        }
+
+        async function loadProfile() {
+            requireAdmin();
+            try {
+                const data = await API.get('/api/admin/me');
+                if (data.success) {
+                    document.getElementById('adm-name').value = data.admin.name || '';
+                    document.getElementById('adm-email').value = data.admin.email;
+                    document.getElementById('adm-mobile').value = data.admin.mobile || '';
+                    document.getElementById('adm-whatsapp').value = data.admin.whatsapp || '';
+                    document.getElementById('adm-bio').value = data.admin.bio || '';
+                    document.getElementById('created-at').textContent = 'Account created: ' + new Date(data.admin.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                }
+            } catch (e) {
+                showAlert('Failed to load profile details', 'error');
+            }
+        }
+
+        document.getElementById('profile-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('save-profile-btn');
+            const name = document.getElementById('adm-name').value;
+            const email = document.getElementById('adm-email').value;
+            const mobile = document.getElementById('adm-mobile').value;
+            const whatsapp = document.getElementById('adm-whatsapp').value;
+            const bio = document.getElementById('adm-bio').value;
+
+            const password = document.getElementById('adm-password').value;
+            const confirm = document.getElementById('adm-confirm-password').value;
+
+            if (password && password !== confirm) {
+                showAlert('Passwords do not match', 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Saving…';
+
+            try {
+                const data = await API.put('/api/admin/me', {
+                    name,
+                    email,
+                    mobile,
+                    whatsapp,
+                    bio,
+                    password: password || undefined
+                });
+
+                // Small UX delay to make progress visible
+                await new Promise(r => setTimeout(r, 600));
+
+                if (data.success) {
+                    showAlert('Profile updated successfully!');
+                    document.getElementById('adm-password').value = '';
+                    document.getElementById('adm-confirm-password').value = '';
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (err) {
+                showAlert(err.message || 'Failed to update profile', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Save Changes';
+            }
+        });
+
+        loadProfile();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orders – Admin | NADHI TRADERS</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <div class="admin-layout">
+
+        <aside class="admin-sidebar">
+            <div class="admin-sidebar-logo">🌿 NADHI TRADERS<span>Admin Panel</span></div>
+            <nav class="admin-nav">
+                <a href="/admin/dashboard.html"><span class="icon">📊</span> Dashboard</a>
+                <a href="/admin/products.html"><span class="icon">📦</span> Products</a>
+                <a href="/admin/orders.html" class="active"><span class="icon">🧾</span> Orders</a>
+                <a href="/admin/details.html"><span class="icon">👤</span> Admin Details</a>
+                <a href="/" target="_blank"><span class="icon">🏪</span> View Store</a>
+                <a href="#" onclick="logout()"><span class="icon">🚪</span> Logout</a>
+            </nav>
+        </aside>
+
+        <main class="admin-main">
+            <div class="admin-header">
+                <div>
+                    <h1>Orders</h1>
+                    <p style="color:var(--text-light);font-size:0.88rem">Manage and track customer orders</p>
+                </div>
+                <div style="display:flex;gap:10px;align-items:center">
+                    <select id="status-filter" onchange="filterOrders()"
+                        style="padding:8px 14px;border:2px solid var(--cream-dark);border-radius:var(--radius-sm);font-family:inherit;font-size:0.9rem">
+                        <option value="all">All Orders</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Packed">Packed</option>
+                        <option value="Delivered">Delivered</option>
+                    </select>
+                    <button class="btn btn-primary btn-sm" onclick="loadOrders()">🔄 Refresh</button>
+                </div>
+            </div>
+
+            <div id="alert-box"></div>
+
+            <!-- SUMMARY PILLS -->
+            <div style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap">
+                <div
+                    style="background:var(--white);border-radius:20px;padding:8px 20px;font-size:0.85rem;box-shadow:var(--shadow-sm)">
+                    Total: <strong id="cnt-all">—</strong>
+                </div>
+                <div style="background:#fff3cd;border-radius:20px;padding:8px 20px;font-size:0.85rem">
+                    Pending: <strong id="cnt-pending" style="color:#856404">—</strong>
+                </div>
+                <div style="background:var(--brown-pale);border-radius:20px;padding:8px 20px;font-size:0.85rem">
+                    Packed: <strong id="cnt-packed" style="color:var(--brown-dark)">—</strong>
+                </div>
+                <div style="background:var(--green-pale);border-radius:20px;padding:8px 20px;font-size:0.85rem">
+                    Delivered: <strong id="cnt-delivered" style="color:var(--green-dark)">—</strong>
+                </div>
+            </div>
+
+            <div
+                style="background:var(--white);border-radius:var(--radius-md);padding:24px;box-shadow:var(--shadow-sm)">
+                <div class="admin-table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Customer</th>
+                                <th>Phone</th>
+                                <th>Address</th>
+                                <th>Products</th>
+                                <th>Amount</th>
+                                <th>Payment</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Update</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orders-body">
+                            <tr>
+                                <td colspan="10" style="text-align:center;color:var(--text-light)">Loading…</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ORDER DETAIL MODAL -->
+    <div class="modal-overlay hidden" id="order-modal">
+        <div class="modal" style="max-width:600px">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <h2 id="modal-order-id">Order Details</h2>
+            <div id="modal-order-content" style="margin-top:20px"></div>
+            <div style="text-align:right;margin-top:20px">
+                <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        function requireAdmin() { if (!localStorage.getItem('nadhi_admin_token')) location.href = '/admin/login.html'; }
+        function logout() { localStorage.removeItem('nadhi_admin_token'); location.href = '/admin/login.html'; }
+        function formatPrice(p) { return '₹' + parseFloat(p).toFixed(2); }
+        function padId(id) { return `#NT-${String(id).padStart(5, '0')}`; }
+        function fmtDate(d) { return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }); }
+        function statusBadge(s) {
+            const cls = { Pending: 'status-pending', Packed: 'status-packed', Delivered: 'status-delivered' };
+            return `<span class="status-badge ${cls[s] || ''}">${s}</span>`;
+        }
+        function showAlert(msg, type = 'success') {
+            const el = document.getElementById('alert-box');
+            el.innerHTML = `<div class="alert alert-${type}" style="margin-bottom:16px; box-shadow: var(--shadow-md); border-left: 5px solid ${type === 'success' ? 'var(--green)' : '#e53935'}">${type === 'success' ? '✅' : '❌'} ${msg}</div>`;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(() => el.innerHTML = '', 4000);
+        }
+
+        let allOrders = [];
+
+        async function loadOrders() {
+            const tbody = document.getElementById('orders-body');
+            try {
+                allOrders = await API.get('/api/orders');
+                // Update counts
+                document.getElementById('cnt-all').textContent = allOrders.length;
+                document.getElementById('cnt-pending').textContent = allOrders.filter(o => o.status === 'Pending').length;
+                document.getElementById('cnt-packed').textContent = allOrders.filter(o => o.status === 'Packed').length;
+                document.getElementById('cnt-delivered').textContent = allOrders.filter(o => o.status === 'Delivered').length;
+                filterOrders();
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:red">Failed to load orders</td></tr>';
+            }
+        }
+
+        function filterOrders() {
+            const filter = document.getElementById('status-filter').value;
+            const filtered = filter === 'all' ? allOrders : allOrders.filter(o => o.status === filter);
+            renderOrders(filtered);
+        }
+
+        function renderOrders(orders) {
+            const tbody = document.getElementById('orders-body');
+            if (!orders.length) {
+                tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--text-light)">No orders found.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = orders.map(o => {
+                const productSummary = o.products.slice(0, 2).map(p => `${p.name} (${p.weight})`).join(', ') + (o.products.length > 2 ? ` +${o.products.length - 2} more` : '');
+                return `
+      <tr>
+        <td><button onclick="viewOrder(${o.id})" style="background:none;color:var(--green);font-weight:700;text-decoration:underline">${padId(o.id)}</button></td>
+        <td>${o.customerName}</td>
+        <td>${o.phone}</td>
+        <td style="max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${o.address}, ${o.pincode}">${o.address.substring(0, 30)}…</td>
+        <td style="max-width:160px;font-size:0.8rem;color:var(--text-mid)">${productSummary}</td>
+        <td><strong>${formatPrice(o.totalAmount)}</strong></td>
+        <td>${o.paymentMethod}</td>
+        <td id="status-${o.id}">${statusBadge(o.status)}</td>
+        <td>${fmtDate(o.createdAt)}</td>
+        <td>
+          <select onchange="updateStatus(${o.id}, this.value)" style="padding:5px 8px;border-radius:4px;border:1.5px solid var(--cream-dark);font-size:0.82rem;font-family:inherit" data-oid="${o.id}">
+            <option value="">Change…</option>
+            <option value="Pending"  ${o.status === 'Pending' ? 'disabled' : ''}>⏳ Pending</option>
+            <option value="Packed"   ${o.status === 'Packed' ? 'disabled' : ''}>📦 Packed</option>
+            <option value="Delivered"${o.status === 'Delivered' ? 'disabled' : ''}>✅ Delivered</option>
+          </select>
+        </td>
+      </tr>`;
+            }).join('');
+        }
+
+        async function updateStatus(orderId, newStatus) {
+            if (!newStatus) return;
+            try {
+                const updated = await API.patch(`/api/orders/${orderId}/status`, { status: newStatus });
+                showAlert(`Order ${padId(orderId)} status → ${newStatus}`);
+                // Update count and refresh
+                const order = allOrders.find(o => o.id === orderId);
+                if (order) order.status = newStatus;
+                document.getElementById('cnt-pending').textContent = allOrders.filter(o => o.status === 'Pending').length;
+                document.getElementById('cnt-packed').textContent = allOrders.filter(o => o.status === 'Packed').length;
+                document.getElementById('cnt-delivered').textContent = allOrders.filter(o => o.status === 'Delivered').length;
+                filterOrders();
+            } catch (e) { showAlert('Status update failed. Please try again.', 'error'); }
+        }
+
+        function viewOrder(id) {
+            const o = allOrders.find(o => o.id === id);
+            if (!o) return;
+            document.getElementById('modal-order-id').textContent = `Order ${padId(o.id)}`;
+            document.getElementById('modal-order-content').innerHTML = `
+    <div style="display:grid;gap:16px">
+      <div style="background:var(--cream);border-radius:var(--radius-sm);padding:16px">
+        <h4 style="margin-bottom:10px;color:var(--brown-dark)">👤 Customer Details</h4>
+        <p><strong>Name:</strong> ${o.customerName}</p>
+        <p><strong>Phone:</strong> ${o.phone}</p>
+        <p><strong>Address:</strong> ${o.address}, ${o.pincode}</p>
+      </div>
+      <div style="background:var(--cream);border-radius:var(--radius-sm);padding:16px">
+        <h4 style="margin-bottom:10px;color:var(--brown-dark)">🛒 Items Ordered</h4>
+        ${o.products.map(p => `
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:0.88rem">
+            <span>${p.name} (${p.weight}) × ${p.qty}</span>
+            <strong>${formatPrice(p.unitPrice * p.qty)}</strong>
+          </div>`).join('')}
+        <hr style="border:none;border-top:1px dashed var(--cream-dark);margin:10px 0">
+        <div style="display:flex;justify-content:space-between;font-weight:700">
+          <span>Total</span><span style="color:var(--green-dark)">${formatPrice(o.totalAmount)}</span>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;background:var(--cream);border-radius:var(--radius-sm);padding:14px 16px">
+        <span><strong>Payment:</strong> ${o.paymentMethod}</span>
+        <span>${statusBadge(o.status)}</span>
+      </div>
+    </div>`;
+            document.getElementById('order-modal').classList.remove('hidden');
+        }
+
+        function closeModal() { document.getElementById('order-modal').classList.add('hidden'); }
+
+        requireAdmin();
+        loadOrders();
+    </script>
+</body>
+
+</html>

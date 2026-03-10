@@ -1,0 +1,129 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Placed! – NADHI TRADERS</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <div class="nav-inner">
+            <a href="/" class="nav-logo">
+                <img src="/images/logo.png" alt="Nadhi Traders Logo" style="height:54px;width:auto;object-fit:contain;">
+                <div class="nav-logo-text">
+                    <h2>NADHI TRADERS</h2>
+                    <span>Premium Dry Fruits & Seeds</span>
+                </div>
+            </a>
+            <ul class="nav-links" id="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/products.html">Products</a></li>
+                <li><a href="/admin/login.html" class="admin-nav-btn">🔐 Admin</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="success-page">
+        <div class="success-card">
+            <div class="success-icon">✅</div>
+            <h1 style="color:var(--green-dark);margin-bottom:8px">Order Placed!</h1>
+            <p style="color:var(--text-light);margin-bottom:20px">Thank you for shopping with NADHI TRADERS. We have
+                logged your order.</p>
+
+            <div
+                style="background:var(--cream);border-radius:var(--radius-sm);padding:8px 16px;font-size:0.8rem;color:var(--text-light);margin-bottom:8px">
+                Your Order ID</div>
+            <div class="order-id-box" id="order-id-display">Loading…</div>
+
+            <div id="order-details" style="text-align:left;margin:24px 0;display:none">
+                <h3 style="color:var(--brown-dark);margin-bottom:16px;font-size:1rem">📋 Order Summary</h3>
+                <div id="order-products"></div>
+                <hr style="border:none;border-top:1px dashed var(--cream-dark);margin:12px 0">
+                <div style="display:flex;justify-content:space-between;font-weight:700;color:var(--green-dark)">
+                    <span>Total</span>
+                    <span id="order-total"></span>
+                </div>
+                <div id="order-payment" style="margin-top:8px;font-size:0.85rem;color:var(--text-light)"></div>
+            </div>
+
+            <div class="alert alert-success">
+                📱 Please message the owner on WhatsApp to confirm your order!
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:12px;margin-top:24px">
+                <a href="#" id="wa-customer-link" class="btn btn-whatsapp">💬 Open WhatsApp to Confirm</a>
+                <a href="/products.html" class="btn btn-secondary">Continue Shopping</a>
+                <a href="/" class="btn btn-primary" style="background:var(--brown);box-shadow:none">Go to Home</a>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-bottom">© 2025 NADHI TRADERS</div>
+    </footer>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/cart.js"></script>
+    <script>
+        const OWNER_PHONE = '918838740081';
+
+        function formatPrice(p) { return '₹' + parseFloat(p).toFixed(2); }
+
+        async function loadOrder() {
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+            const displayEl = document.getElementById('order-id-display');
+
+            if (!id) { displayEl.textContent = 'N/A'; return; }
+            const orderId = '#NT-' + String(id).padStart(5, '0');
+            displayEl.textContent = orderId;
+
+            try {
+                const order = await API.get('/api/orders/' + id);
+                const detailsEl = document.getElementById('order-details');
+                detailsEl.style.display = 'block';
+
+                const productsEl = document.getElementById('order-products');
+                productsEl.innerHTML = order.products.map(function (p) {
+                    return '<div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:0.88rem;">' +
+                        '<span style="color:var(--text-mid)">' + p.name + ' (' + p.weight + ') x' + p.qty + '</span>' +
+                        '<span style="font-weight:600">' + formatPrice(p.unitPrice * p.qty) + '</span>' +
+                        '</div>';
+                }).join('');
+
+                document.getElementById('order-total').textContent = formatPrice(order.totalAmount);
+                document.getElementById('order-payment').innerHTML =
+                    'Payment: <strong>' + order.paymentMethod + '</strong>' +
+                    ' &nbsp;·&nbsp; Status: <span class="status-badge status-' + order.status.toLowerCase() + '">' + order.status + '</span>';
+
+                // Build product lines for WhatsApp notification
+                var productLines = order.products.map(function (p) {
+                    return '  • ' + p.name + ' (' + p.weight + ') x' + p.qty + ' = Rs.' + (p.unitPrice * p.qty).toFixed(2);
+                }).join('\n');
+
+                var customerMsg = encodeURIComponent(
+                    '🛍️ *NEW ORDER - NADHI TRADERS*\n\n' +
+                    '📋 Order ID: ' + orderId + '\n' +
+                    '👤 Customer: ' + order.customerName + '\n' +
+                    '📱 Phone: ' + order.phone + '\n\n' +
+                    '🧺 Items Ordered:\n' + productLines + '\n\n' +
+                    '💰 *Total: Rs.' + order.totalAmount.toFixed(2) + '*\n\n' +
+                    'Hi! I just placed an order. Please confirm. 🌿'
+                );
+
+                document.getElementById('wa-customer-link').href = 'https://wa.me/' + OWNER_PHONE + '?text=' + customerMsg;
+
+            } catch (e) {
+                console.error('Load Order Error:', e);
+            }
+        }
+
+        loadOrder();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login – NADHI TRADERS</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body style="background:var(--brown-dark);min-height:100vh;display:flex;align-items:center;justify-content:center">
+
+    <div style="width:100%;max-width:400px;padding:20px;">
+        <div style="text-align:center;margin-bottom:32px">
+            <div style="font-size:3rem;margin-bottom:12px">🌿</div>
+            <h1 style="color:var(--cream);font-size:1.6rem;margin-bottom:4px">NADHI TRADERS</h1>
+            <p style="color:var(--brown-light);font-size:0.88rem">Admin Dashboard</p>
+        </div>
+
+        <div style="background:var(--white);border-radius:var(--radius-lg);padding:36px;box-shadow:var(--shadow-lg)">
+            <h2 style="color:var(--brown-dark);margin-bottom:24px;font-size:1.4rem;text-align:center">🔐 Admin Login
+            </h2>
+
+            <div id="login-error" class="alert alert-error hidden"></div>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="email" placeholder="admin@nadhitraders.com" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="password" placeholder="Enter password" required
+                        autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn-primary btn-full" id="login-btn">Login to Dashboard</button>
+            </form>
+
+            <p style="text-align:center;margin-top:20px;font-size:0.8rem;color:var(--text-light)">
+                🔒 Secure admin access only
+            </p>
+            <p style="text-align:center;margin-top:12px;font-size:0.9rem">
+                Don't have an account? <a href="/admin/signup.html" style="color:var(--green);font-weight:600">Sign
+                    up</a>
+            </p>
+        </div>
+
+        <p style="text-align:center;margin-top:20px;font-size:0.8rem">
+            <a href="/" style="color:var(--brown-light)">← Back to Store</a>
+        </p>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        // Redirect if already logged in
+        if (localStorage.getItem('nadhi_admin_token')) {
+            location.href = '/admin/dashboard.html';
+        }
+
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('login-btn');
+            const errEl = document.getElementById('login-error');
+            errEl.classList.add('hidden');
+            btn.disabled = true;
+            btn.textContent = 'Logging in…';
+
+            try {
+                const data = await API.post('/api/admin/login', {
+                    email: document.getElementById('email').value,
+                    password: document.getElementById('password').value
+                });
+                if (data.success) {
+                    localStorage.setItem('nadhi_admin_token', data.token);
+                    location.href = '/admin/dashboard.html';
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (e) {
+                errEl.textContent = 'Invalid email or password. Please try again.';
+                errEl.classList.remove('hidden');
+                btn.disabled = false;
+                btn.textContent = 'Login to Dashboard';
+            }
+        });
+    </script>
+</body>
+
+</html>

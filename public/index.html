@@ -1,0 +1,226 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NADHI TRADERS – Premium Dry Fruits & Healthy Seeds</title>
+  <meta name="description"
+    content="Buy premium dry fruits and healthy seeds online. Almonds, Cashew, Pistachio, Dates, Chia Seeds and more from NADHI TRADERS.">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">
+        <img src="/images/logo.png" alt="Nadhi Traders Logo" style="height:54px;width:auto;object-fit:contain;">
+        <div class="nav-logo-text">
+          <h2>NADHI TRADERS</h2>
+          <span>Premium Dry Fruits & Seeds</span>
+        </div>
+      </a>
+      <button class="nav-toggle" id="nav-toggle">☰</button>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="/" class="active">Home</a></li>
+        <li><a href="/products.html">Products</a></li>
+        <li>
+          <a href="/cart.html" class="cart-btn">
+            🛒 Cart <span class="cart-count" id="cart-count" style="display:none">0</span>
+          </a>
+        </li>        <li><a href="/admin/login.html" class="admin-nav-btn">🔐 Admin</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-badge">🌟 100% Natural & Fresh</div>
+      <h1>NADHI TRADERS</h1>
+      <p>Premium Dry Fruits & Healthy Seeds — Directly from Nature to Your Home</p>
+      <div class="hero-btns">
+        <a href="/products.html" class="btn btn-primary" style="background:var(--white);color:var(--green-dark)">🛍️
+          Shop Now</a>
+        <a href="https://wa.me/918838740081?text=Hi! I want to order from NADHI TRADERS" target="_blank"
+          class="btn btn-whatsapp">💬 WhatsApp Order</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CATEGORIES -->
+  <section class="section">
+    <div class="container">
+      <div class="section-title">
+        <h2>Shop by <span>Category</span></h2>
+        <p style="color:var(--text-light);margin-top:8px">Handpicked goodness for every need</p>
+      </div>
+      <div class="category-grid">
+        <a href="/products.html?category=Dry+Fruit" class="category-card dry-fruit">
+          <span class="category-icon">🥜</span>
+          <h3 style="color:var(--brown-dark)">Dry Fruits</h3>
+          <p>Almonds, Cashew, Pistachio, Dates & more</p>
+          <div class="btn btn-secondary btn-sm" style="margin-top:16px;display:inline-flex">Browse →</div>
+        </a>
+        <a href="/products.html?category=Seed" class="category-card seed">
+          <span class="category-icon">🌱</span>
+          <h3 style="color:var(--green-dark)">Healthy Seeds</h3>
+          <p>Chia, Sabja, Sunflower, Pumpkin Seeds</p>
+          <div class="btn btn-primary btn-sm" style="margin-top:16px;display:inline-flex">Browse →</div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURED PRODUCTS -->
+  <section class="section" style="background:var(--cream-dark)">
+    <div class="container">
+      <div class="section-title">
+        <h2>Featured <span>Products</span></h2>
+        <p style="color:var(--text-light);margin-top:8px">Customer favourites, always in stock</p>
+      </div>
+      <div class="products-grid" id="featured-grid">
+        <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-light)">Loading products…</div>
+      </div>
+      <div style="text-align:center;margin-top:36px">
+        <a href="/products.html" class="btn btn-primary">View All Products →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY US -->
+  <section class="section">
+    <div class="container">
+      <div class="section-title">
+        <h2>Why Choose <span>NADHI TRADERS</span>?</h2>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:24px;text-align:center">
+        <div style="padding:24px;background:var(--white);border-radius:var(--radius-md);box-shadow:var(--shadow-sm)">
+          <div style="font-size:2.5rem;margin-bottom:12px">🌿</div>
+          <h3 style="margin-bottom:8px;color:var(--green-dark)">100% Natural</h3>
+          <p style="color:var(--text-light);font-size:0.88rem">No preservatives, no artificial colour</p>
+        </div>
+        <div style="padding:24px;background:var(--white);border-radius:var(--radius-md);box-shadow:var(--shadow-sm)">
+          <div style="font-size:2.5rem;margin-bottom:12px">📦</div>
+          <h3 style="margin-bottom:8px;color:var(--green-dark)">Fresh Packaging</h3>
+          <p style="color:var(--text-light);font-size:0.88rem">Sealed for maximum freshness</p>
+        </div>
+        <div style="padding:24px;background:var(--white);border-radius:var(--radius-md);box-shadow:var(--shadow-sm)">
+          <div style="font-size:2.5rem;margin-bottom:12px">🏠</div>
+          <h3 style="margin-bottom:8px;color:var(--green-dark)">Home Based</h3>
+          <p style="color:var(--text-light);font-size:0.88rem">Small batch, personal care</p>
+        </div>
+        <div style="padding:24px;background:var(--white);border-radius:var(--radius-md);box-shadow:var(--shadow-sm)">
+          <div style="font-size:2.5rem;margin-bottom:12px">💬</div>
+          <h3 style="margin-bottom:8px;color:var(--green-dark)">Easy Ordering</h3>
+          <p style="color:var(--text-light);font-size:0.88rem">Order online or via WhatsApp</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHATSAPP FLOATING BUTTON -->
+  <a href="https://wa.me/918838740081?text=Hi! I want to order from NADHI TRADERS" target="_blank" style="position:fixed;bottom:24px;right:24px;z-index:500;width:56px;height:56px;border-radius:50%;
+  background:#25D366;display:flex;align-items:center;justify-content:center;font-size:1.6rem;
+  box-shadow:0 4px 16px rgba(37,211,102,0.5);animation:pulse 2s infinite;" title="Order on WhatsApp">💬</a>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>
+        <h4>🌿 NADHI TRADERS</h4>
+        <p>Premium quality dry fruits and healthy seeds delivered to your doorstep.</p>
+      </div>
+      <div>
+        <h4>Quick Links</h4>
+        <ul style="line-height:2">
+          <li><a href="/">Home</a></li>
+          <li><a href="/products.html">Products</a></li>
+          <li><a href="/cart.html">Cart</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <p>📱 WhatsApp: +91-8838740081</p>
+        <p>📧 bharathisharmila6@gmail.com</p>
+        <p>🕐 Mon–Sat, 9 AM – 7 PM</p>
+      </div>
+    </div>
+    <div class="footer-bottom">© 2025 NADHI TRADERS. All rights reserved. | Made with ❤️ for health.</div>
+  </footer>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/cart.js"></script>
+  <script>
+    const FEATURED_IDS = [1, 2, 3, 5, 7, 9]; // Almonds, Cashew, Pistachio, Dates, Chia, Pumpkin
+
+    async function loadFeatured() {
+      const grid = document.getElementById('featured-grid');
+      try {
+        const products = await API.get('/api/products');
+        const featured = products.filter(p => FEATURED_IDS.includes(p.id)).slice(0, 6);
+        if (!featured.length) { grid.innerHTML = '<p style="text-align:center;color:var(--text-light)">No products found.</p>'; return; }
+        grid.innerHTML = featured.map(p => productCard(p)).join('');
+        grid.querySelectorAll('.weight-btn').forEach(btn => btn.addEventListener('click', selectWeight));
+        grid.querySelectorAll('.add-cart-btn').forEach(btn => btn.addEventListener('click', addToCart));
+      } catch (e) {
+        grid.innerHTML = `<p style="text-align:center;color:var(--text-light)">Could not load products.</p>`;
+      }
+    }
+
+    function productCard(p) {
+      const badge = p.category === 'Dry Fruit' ? 'badge-dry-fruit' : 'badge-seed';
+      return `
+    <div class="product-card">
+      <a href="/product-detail.html?id=${p.id}">
+        ${getProductImageTag(p.image, 'product-card-img')}
+      </a>
+      <div class="product-card-body">
+        <span class="product-card-badge ${badge}">${p.category}</span>
+        <a href="/product-detail.html?id=${p.id}"><div class="product-card-name">${p.name}</div></a>
+        <div class="product-card-desc">${p.description.substring(0, 70)}…</div>
+        <div class="product-card-price">${formatPrice(p.price)} <span>/ 1kg</span></div>
+        <div class="weight-selector">
+          ${['100g', '250g', '500g', '1kg'].map((w, i) => `<button class="weight-btn${i === 0 ? ' active' : ''}" data-weight="${w}" data-pid="${p.id}">${w}</button>`).join('')}
+        </div>
+        <button class="btn btn-primary btn-sm btn-full add-cart-btn" data-pid="${p.id}" data-pname="${p.name}" data-pprice="${p.price}" data-pimage="${p.image}" data-pcategory="${p.category}">🛒 Add to Cart</button>
+      </div>
+    </div>`;
+    }
+
+    function selectWeight(e) {
+      const pid = e.target.dataset.pid;
+      document.querySelectorAll(`.weight-btn[data-pid="${pid}"]`).forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+    }
+
+    function addToCart(e) {
+      const btn = e.target;
+      const pid = parseInt(btn.dataset.pid);
+      const weightBtn = document.querySelector(`.weight-btn.active[data-pid="${pid}"]`);
+      const weight = weightBtn ? weightBtn.dataset.weight : '250g';
+      const product = { id: pid, name: btn.dataset.pname, price: parseFloat(btn.dataset.pprice), image: btn.dataset.pimage, category: btn.dataset.pcategory };
+      Cart.add(product, weight);
+    }
+
+    initNavbar();
+    loadFeatured();
+  </script>
+  <style>
+    @keyframes pulse {
+
+      0%,
+      100% {
+        box-shadow: 0 4px 16px rgba(37, 211, 102, 0.5)
+      }
+
+      50% {
+        box-shadow: 0 4px 28px rgba(37, 211, 102, 0.8)
+      }
+    }
+  </style>
+</body>
+
+</html>
