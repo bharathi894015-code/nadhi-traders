@@ -154,7 +154,7 @@ router.put('/me', authMiddleware, async (req, res) => {
         res.json({ success: true, message: 'Profile updated successfully' });
     } catch (e) {
         console.error('Profile update error:', e);
-        res.status(500).json({ success: false, message: 'Server error during update' });
+        res.status(500).json({ success: false, message: 'Server error: ' + (e.message || 'Unknown string format') });
     }
 });
 
